@@ -8,13 +8,10 @@ library(cowplot)
 library(RCurl)
 library(DoubletFinder)
 
-
 #---------------------------------------------- Loading single-cell RNA-seq count data
-
 root.path= ""
 file.path= paste0(root.path, "dataset/")
 output.path= paste0(root.path, "results/")
-
 
 dataFileName1 = paste(file.path, "C1.csv", sep="") 
 dataFileName2 = paste(file.path, "D1.csv", sep="")  
@@ -24,7 +21,6 @@ dataFileName5 = paste(file.path, "H1.csv", sep="")
 dataFileName6 = paste(file.path, "I1.csv", sep="")   
 dataFileName7 = paste(file.path, "M1.csv", sep="") 
 dataFileName8 = paste(file.path, "N1.csv", sep="")
-
 
 # read data
 singleCellDataGenes_C <- read.csv(file= dataFileName1, head=TRUE, row.names = "Ensembl.ID", sep= ",", stringsAsFactors= FALSE)
@@ -36,9 +32,7 @@ singleCellDataGenes_I <- read.csv(file= dataFileName6, head=TRUE, row.names = "E
 singleCellDataGenes_M <- read.csv(file= dataFileName7, head=TRUE, row.names = "Ensembl.ID", sep= ",", stringsAsFactors= FALSE) 
 singleCellDataGenes_N <- read.csv(file= dataFileName8, head=TRUE, row.names = "Ensembl.ID", sep= ",", stringsAsFactors= FALSE) 
 
-
 #---------------------------------------------- Removing duplicate genes
-
 selectHighestExpressedDuplicatedGenesFun <- function(singleCellDataGenes){
   # ----Smart and quick way to find genes that are more expressed from duplicated genes ---- #
   # creating a temporary label that is a combination of gene and the amount of expression
@@ -48,7 +42,7 @@ selectHighestExpressedDuplicatedGenesFun <- function(singleCellDataGenes){
   single.tmp = singleCellDataGenes[order(singleCellDataGenes$tmp.label), ]
   # pick the last duplicated label (belongs to highest expressed gene)
   single.tmp.new = single.tmp[!duplicated(single.tmp$Gene.Symbol, fromLast= TRUE),]
-  
+
   #----------- Test Routine: to make sure cell with greater number of genes selected
   t1= single.tmp[!duplicated(single.tmp$Gene.Symbol, fromLast= TRUE),]
   t2= single.tmp[!duplicated(single.tmp$Gene.Symbol, fromLast= FALSE),]
@@ -61,28 +55,20 @@ selectHighestExpressedDuplicatedGenesFun <- function(singleCellDataGenes){
   return ( single.tmp.new[,1:(ncol(singleCellDataGenes)-1)] )
 }
 
-
 singleCellDataGenes_C = selectHighestExpressedDuplicatedGenesFun(singleCellDataGenes_C)
 rownames(singleCellDataGenes_C) = singleCellDataGenes_C$Gene.Symbol
-
 singleCellDataGenes_D = selectHighestExpressedDuplicatedGenesFun(singleCellDataGenes_D)
 rownames(singleCellDataGenes_D)= singleCellDataGenes_D$Gene.Symbol
-
 singleCellDataGenes_E = selectHighestExpressedDuplicatedGenesFun(singleCellDataGenes_E)
 rownames(singleCellDataGenes_E) = singleCellDataGenes_E$Gene.Symbol
-
 singleCellDataGenes_F = selectHighestExpressedDuplicatedGenesFun(singleCellDataGenes_F)
 rownames(singleCellDataGenes_F)= singleCellDataGenes_F$Gene.Symbol
-
 singleCellDataGenes_H= selectHighestExpressedDuplicatedGenesFun(singleCellDataGenes_H)
 rownames(singleCellDataGenes_H)= singleCellDataGenes_H$Gene.Symbol
-
 singleCellDataGenes_I = selectHighestExpressedDuplicatedGenesFun(singleCellDataGenes_I)
 rownames(singleCellDataGenes_I)= singleCellDataGenes_I$Gene.Symbol
-
 singleCellDataGenes_M = selectHighestExpressedDuplicatedGenesFun(singleCellDataGenes_M)
 rownames(singleCellDataGenes_M)= singleCellDataGenes_M$Gene.Symbol
-
 singleCellDataGenes_N = selectHighestExpressedDuplicatedGenesFun(singleCellDataGenes_N)
 rownames(singleCellDataGenes_N)= singleCellDataGenes_N$Gene.Symbol
 
@@ -103,11 +89,8 @@ colnames(Plate_M) = paste("M", colnames(Plate_M), sep="_") #add prefix to column
 Plate_N = singleCellDataGenes_N[,-1] #remove column Gene.Symbol
 colnames(Plate_N) = paste("N", colnames(Plate_N), sep="_") #add prefix to column names
 
-
-
 #---------------------------------------------- Quality control
 #---------------------------------------------- Create Seurat objects
-
 # We can now load the expression matrices into objects and then merge them into a single merged object. 
 sdata.C <- CreateSeuratObject(counts= Plate_C, project= "C", min.cells= 5, min.features= 200)
 dim(sdata.C)
@@ -134,7 +117,6 @@ head(sdata.D@meta.data)
 merged_seurat <- merge(sdata.C, c(sdata.D, sdata.E, sdata.F, sdata.H, sdata.I, sdata.M, sdata.N), 
                        add.cell.ids = c("C", "D", "E", "F", "H", "I", "M", "N"))
 dim(merged_seurat)
-
 # Check that the merged object has the appropriate sample-specific prefixes
 head(merged_seurat@meta.data)
 tail(merged_seurat@meta.data)
@@ -142,8 +124,6 @@ tail(merged_seurat@meta.data)
 # Here it is how the count matrix and the metadata look like for every cell
 as.data.frame(merged_seurat@assays$RNA@counts[1:10, 1:2])
 head(merged_seurat@meta.data, 10)
-
-
 write.csv(merged_seurat@assays$RNA@counts, file= "merged_seurat.csv")
 
 #---------------------------------------------- Add number of genes per UMI for each cell to metadata
@@ -183,9 +163,7 @@ metadata$plate[which(str_detect(metadata$cells, "^I_"))] <- "I"
 metadata$plate[which(str_detect(metadata$cells, "^M_"))] <- "M"
 metadata$plate[which(str_detect(metadata$cells, "^N_"))] <- "N"
 
-
 #---------------------------------------------- updating metadata to our Seurat object
-
 # assigning the dataframe into the meta.data slot
 # Add metadata back to Seurat object
 merged_seurat@meta.data <- metadata
@@ -227,7 +205,6 @@ metadata %>%
 # If we see a small shoulder to the right of the major peak or a bimodal distribution of the cells, that can indicate a couple of things: 
 # It might be that there are a set of cells that failed for some reason. It could also be that there are biologically different types of cells.
 
-
 # Visualize the distribution of genes detected per cell via box plot
 metadata %>% 
   ggplot(aes(x=plate, y=log10(nGene), fill=plate)) + 
@@ -247,20 +224,15 @@ metadata %>%
   theme_classic() +
   geom_vline(xintercept = 0.6)
 
-
 dim(merged_seurat@assays$RNA@counts)
 #----------------------------------------------- QC metrics stored in Seurat
 # Visualize QC metrics as a violin plot
 VlnPlot(merged_seurat, features= c("nGene", "nUMI", "mitoRatio", "riboRatio"), ncol = 2)
 
-
 #----------------------------------------------- Filtering
-
 #To filter, we will go back to our Seurat object and use the subset() function:
 
-
 #--------------- Cell-level filtering
-
 # Filter out low quality reads using selected thresholds - these will change with experiment
 filtered_merged_seurat <- subset(x = merged_seurat, 
                                  subset= (nUMI >= 250000) & 
@@ -268,35 +240,24 @@ filtered_merged_seurat <- subset(x = merged_seurat,
                                    (mitoRatio < 0.6)&
                                    (riboRatio >= 0.02))
 dim(filtered_merged_seurat@assays$RNA@counts)
-
-
 write.csv(filtered_merged_seurat@assays$RNA@counts, file= "Cell-level_filtered_merged_seurat.csv")
 
-
 #--------------- Gene-level filtering
-
 # First we will remove genes that have zero expression in all cells.
 # Second we will keep only genes which are expressed in 5 or more cells.
 
 # Extract counts
 counts <- GetAssayData(object = filtered_merged_seurat, slot = "counts")
-
 # Output a logical vector for every gene on whether the more than zero counts per cell
 nonzero <- counts > 0
-
 # Sums all TRUE values and returns TRUE if more than 3 TRUE values per gene
 keep_genes <- Matrix::rowSums(nonzero) >= 5
-
 # Only keeping those genes expressed in more than 3 cells
 filtered_counts <- counts[keep_genes, ]
-
 # Reassign to filtered Seurat object
 filtered_merged_seurat <- CreateSeuratObject(filtered_counts, meta.data = filtered_merged_seurat@meta.data)
-
 dim(filtered_merged_seurat@assays$RNA@counts)
-
 write.csv(filtered_merged_seurat@assays$RNA@counts, file= "Gene-level_filtered_merged_seurat.csv")
-
 
 #----------------------------------------------- genes contribute the most to such reads
 # We can also see which genes contribute the most to such reads. We can for instance plot the percentage of counts per gene.
@@ -308,7 +269,6 @@ most_expressed <- order(apply(C, 1, median), decreasing = T)[20:1]
 
 boxplot(as.matrix(t(C[most_expressed, ])), cex = 0.1, las = 1, xlab = "% total count per cell",
         col = (scales::hue_pal())(20)[20:1], horizontal = TRUE)
-
 
 #---------------------------------------------- again plot, after filtering
 
@@ -386,14 +346,11 @@ clean_metadata %>%
   scale_x_log10() + 
   theme_classic()
 
-
 #---------------------------------------------- Count normalization
-
 seurat_phase <- NormalizeData(filtered_merged_seurat)
 dim(seurat_phase)
 
 #---------------------------------------------- identification of the most variable genes
-
 seurat_phase <- FindVariableFeatures(seurat_phase, 
                                      selection.method = "vst",
                                      nfeatures = 2000, 
@@ -401,12 +358,10 @@ seurat_phase <- FindVariableFeatures(seurat_phase,
 dim(seurat_phase)
 
 #---------------------------------------------- Scale the counts
-
 seurat_phase <- ScaleData(seurat_phase)
 dim(seurat_phase)
 
 #---------------------------------------------- Principal Component Analysis (PCA)
-
 # Perform PCA
 seurat_phase <- RunPCA(seurat_phase)
 
@@ -419,7 +374,6 @@ PCAPlot(seurat_phase,
         split.by = "plate") 
 
 #---------------------------------------------- UMAP visualization
-
 # Run UMAP
 seurat_phase <- RunUMAP(seurat_phase, 
                         dims = 1:40,
@@ -433,7 +387,6 @@ DimPlot(seurat_phase,
         split.by = "plate")  
 
 #---------------------------------------------- Identify significant PCs 
-
 # Explore heatmap of PCs
 DimHeatmap(seurat_phase, 
            dims = 1:18, 
@@ -451,9 +404,7 @@ print(x = seurat_phase[["pca"]],
 ElbowPlot(object = seurat_phase, 
           ndims = 40)
 
-
 #--------------- Doublet Finder
-
 # Extremely high number of detected genes could indicate doublets. 
 #However, depending on the cell type composition in your sample, you may have cells with higher number of genes (and also higher counts) from one cell type.
 # we run doubletFinder, selecting first 18 PCs and a pK value of 0.9. To optimize the parameters, you can run the paramSweep function in the package.
@@ -465,7 +416,6 @@ seurat_phase <- doubletFinder_v3(seurat_phase, pN = 0.25, pK = 0.09, nExp = nExp
 # name of the DF prediction can change, so extract the correct column name.
 DF.name = colnames(seurat_phase@meta.data)[grepl("DF.classification", colnames(seurat_phase@meta.data))]
 
-
 cowplot::plot_grid(ncol = 2, DimPlot(seurat_phase, group.by = "plate") + NoAxes(),
                    DimPlot(seurat_phase, group.by = DF.name) + NoAxes())
 
@@ -475,10 +425,7 @@ VlnPlot(seurat_phase, features = "nGene", group.by = DF.name, pt.size = 0.1)
 # lets remove all predicted doublets from our data.
 seurat_phase = seurat_phase[, seurat_phase@meta.data[, DF.name] == "Singlet"]
 dim(seurat_phase)
-
-
 write.csv(seurat_phase@assays$RNA@counts, file= "seurat_phase_after_doublet_finder.csv")
-
 
 #--------------------------
 # Create metadata dataframe
@@ -517,7 +464,6 @@ cleanFinal_metadata %>%
   geom_text(aes(label = ..count..), stat = "count", vjust = 1.5, colour = "white") +
   ggtitle("NCells")
 
-
 #----------------------------------------------- genes contribute the most to such reads
 # We can also see which genes contribute the most to such reads. We can for instance plot the percentage of counts per gene.
 # # Compute the relative expression of each gene per cell Use sparse matrix.
@@ -529,9 +475,7 @@ most_expressed <- order(apply(C, 1, median), decreasing = T)[20:1]
 boxplot(as.matrix(t(C[most_expressed, ])), cex = 0.1, las = 1, xlab = "% total count per cell",
         col = (scales::hue_pal())(20)[20:1], horizontal = TRUE)
 
-
 #---------------------------------------------- Clustering the cells
-
 # To perform clustering, we determine the genes that are most different in their expression between cells. 
 # Then, we use these genes to determine which correlated genes sets are responsible for the largest differences in expression between cells.
 # Seurat uses a graph-based clustering approach, which embeds cells in a graph structure, using a K-nearest neighbor (KNN) graph (by default), with edges drawn between cells with similar gene expression patterns. Then, it attempts to partition this graph into highly interconnected ‘quasi-cliques’ or ‘communities’.
@@ -546,7 +490,6 @@ seurat_phase <- FindClusters(object = seurat_phase, resolution = c(0.4, 0.6, 0.8
 seurat_phase@meta.data %>% 
   View()
 
-
 # Assign identity of clusters
 Idents(object = seurat_phase) <- "RNA_snn_res.1.8"
 
@@ -556,9 +499,7 @@ DimPlot(seurat_phase,
         label = TRUE,
         label.size = 3)
 
-
 #---------------------------------------------- Segregation of clusters by plate
-
 # Extract identity and plate information from Seurat object to determine the number of cells per cluster per plate
 n_cells <- FetchData(seurat_phase, 
                      vars = c("ident", "plate")) %>%
@@ -583,9 +524,7 @@ FeaturePlot(seurat_phase,
             min.cutoff = 'q10',
             label = TRUE)
 
-
 #---------------------------------------------- Exploration of the PCs driving the different clusters
-
 # Defining the information in the Seurat object of interest
 columns <- c(paste0("PC_", 1:20),
              "ident",
@@ -625,9 +564,7 @@ map(paste0("PC_", 1:20), function(pc){
 # Examine PCA results 
 print(seurat_phase[["pca"]], dims = 1:20, nfeatures = 5)
 
-
 #---------------------------------------------- Exploring known cell type markers (base on Tran et. al.)
-
 DimPlot(object = seurat_phase, 
         reduction = "umap", 
         label = TRUE)
@@ -656,7 +593,6 @@ VlnPlot(object = seurat_phase,
 DotPlot(object = seurat_phase, cols = c("lightgrey", "red"),
         features = c("Rbpms", "Thy1", "Slc17a6", "Pou4f1", "Pou4f2", "Pou4f3", "Tfap2a", "Gad1", "Slc6a9", "Lhx1", "Onecut1", "Vsx2", "Otx2", "Arr3", "Rho", "Rlbp1", "Aqp4", "Pecam1", "Kcnj8", "Fcrls", "P2ry12"))
 
-
 # --------------------------------- Adding Gene Annotations
 
 annotations <- read.csv("MetaData/00_Master_RGC_Y.csv")
@@ -669,9 +605,7 @@ seurat_phase.markers %>%
 
 write.csv(seurat_phase.markers, "All markers for each clusters.csv", row.names=FALSE)
 
-
 # --------------------------------- Evaluating marker genes
-
 # Extract top 30 markers per cluster
 seurat_phase.markers %>%
   group_by(cluster) %>%
@@ -679,12 +613,9 @@ seurat_phase.markers %>%
 
 # Visualize top 30 markers per cluster
 View(top30)
-
 write.csv(top30, "top30 markers for each clusters.csv", row.names=FALSE)
 
-
 # --------------------------------- Visualizing marker genes
-
 # DoHeatmap() generates an expression heatmap for given cells and features. 
 # In this case, we are plotting the top 30 markers for each cluster.
 DoHeatmap(object = seurat_phase, features= top30$gene)
@@ -695,9 +626,7 @@ DotPlot(object   = seurat_phase,
         assay    = "RNA") +
   coord_flip()
 
-
 # --------------------------------- Assigning cell type identity to clusters based cluster markers on Tran et al. (Fig. 1E)
-
 # We can then reassign the identity of the clusters to these cell types:
 # Rename all identities
 seurat_phase_anno <- RenameIdents(object = seurat_phase, 
@@ -753,18 +682,13 @@ DimPlot(object = seurat_phase_RemovedUnwantedClusters,
         label = TRUE,
         label.size = 3)
 
-
 # ------------------------- Exclude non-RGC clusters and re-cluster with only RGC clusters
-
 # --------------------------------------------- re-clustering (start from scratch)
-
 #---------------------------------------------- Count normalization
-
 seurat_phase_RemovedUnwantedClusters <- NormalizeData(seurat_phase_RemovedUnwantedClusters)
 dim(seurat_phase_RemovedUnwantedClusters)
 
 #---------------------------------------------- identification of the most variable genes
-
 seurat_phase_RemovedUnwantedClusters <- FindVariableFeatures(seurat_phase_RemovedUnwantedClusters, 
                                                              selection.method = "vst",
                                                              nfeatures = 2000, 
@@ -772,12 +696,10 @@ seurat_phase_RemovedUnwantedClusters <- FindVariableFeatures(seurat_phase_Remove
 dim(seurat_phase_RemovedUnwantedClusters)
 
 #---------------------------------------------- Scale the counts
-
 seurat_phase_RemovedUnwantedClusters <- ScaleData(seurat_phase_RemovedUnwantedClusters)
 dim(seurat_phase_RemovedUnwantedClusters)
 
 #---------------------------------------------- Principal Component Analysis (PCA)
-
 # Perform PCA
 seurat_phase_RemovedUnwantedClusters <- RunPCA(seurat_phase_RemovedUnwantedClusters)
 
@@ -790,12 +712,10 @@ PCAPlot(seurat_phase_RemovedUnwantedClusters,
         split.by = "plate") 
 
 #---------------------------------------------- UMAP visualization
-
 # Run UMAP
 seurat_phase_RemovedUnwantedClusters <- RunUMAP(seurat_phase_RemovedUnwantedClusters, 
                                                 dims = 1:40,
                                                 reduction = "pca")
-
 # Plot UMAP colored by plate                            
 DimPlot(seurat_phase_RemovedUnwantedClusters) 
 
@@ -804,7 +724,6 @@ DimPlot(seurat_phase_RemovedUnwantedClusters,
         split.by = "plate")  
 
 #---------------------------------------------- Identify significant PCs 
-
 # Explore heatmap of PCs
 DimHeatmap(seurat_phase_RemovedUnwantedClusters, 
            dims = 1:18, 
@@ -848,9 +767,7 @@ cleanFinal_metadata %>%
   geom_text(aes(label = ..count..), stat = "count", vjust = 1.5, colour = "white") +
   ggtitle("NCells")
 
-
 #---------------------------------------------- Second round of clustering the cells
-
 # To perform clustering, we determine the genes that are most different in their expression between cells. 
 # Then, we use these genes to determine which correlated genes sets are responsible for the largest differences in expression between cells.
 # Seurat uses a graph-based clustering approach, which embeds cells in a graph structure, using a K-nearest neighbor (KNN) graph (by default), with edges drawn between cells with similar gene expression patterns. Then, it attempts to partition this graph into highly interconnected ‘quasi-cliques’ or ‘communities’.
@@ -865,7 +782,6 @@ seurat_phase_RemovedUnwantedClusters <- FindClusters(object = seurat_phase_Remov
 seurat_phase_RemovedUnwantedClusters@meta.data %>% 
   View()
 
-
 # Assign identity of clusters
 Idents(object = seurat_phase_RemovedUnwantedClusters) <- "RNA_snn_res.1"
 
@@ -876,7 +792,6 @@ DimPlot(seurat_phase_RemovedUnwantedClusters,
         label.size = 3)
 
 #---------------------------------------------- Segregation of clusters by plate
-
 # Extract identity and plate information from Seurat object to determine the number of cells per cluster per plate
 n_cells <- FetchData(seurat_phase_RemovedUnwantedClusters, 
                      vars = c("ident", "plate")) %>%
@@ -902,7 +817,6 @@ FeaturePlot(seurat_phase_RemovedUnwantedClusters,
             label = TRUE)
 
 #---------------------------------------------- Exploration of the PCs driving the different clusters
-
 # Defining the information in the Seurat object of interest
 columns <- c(paste0("PC_", 1:20),
              "ident",
@@ -942,9 +856,7 @@ map(paste0("PC_", 1:20), function(pc){
 # Examine PCA results 
 print(seurat_phase_RemovedUnwantedClusters[["pca"]], dims = 1:20, nfeatures = 5)
 
-
 #---------------------------------------------- Exploring known cell type markers (Pan-RGCs)
-
 DimPlot(object = seurat_phase_RemovedUnwantedClusters, 
         reduction = "umap", 
         label = TRUE)
@@ -973,24 +885,17 @@ VlnPlot(object = seurat_phase_RemovedUnwantedClusters,
 DotPlot(object = seurat_phase_RemovedUnwantedClusters,
         features = c("Rbpms", "Thy1", "Slc17a6", "Pou4f1", "Pou4f2", "Pou4f3"))
 
-
 # --------------------------------- Single-cell RNA-seq marker identification
-
 # --------------------------------- Adding Gene Annotations
-
 annotations <- read.csv("MetaData/00_Master_RGC_Y.csv")
-
 # find markers for every cluster compared to all remaining cells, report only the positive ones
 seurat_phase_RemovedUnwantedClusters.markers <- FindAllMarkers(seurat_phase_RemovedUnwantedClusters)
 seurat_phase_RemovedUnwantedClusters.markers %>%
   group_by(cluster) %>%
   slice_max(n = 2, order_by = avg_log2FC)
-
 write.csv(seurat_phase_RemovedUnwantedClusters.markers, "All markers for each clusters in Round2 clustering.csv", row.names=FALSE)
 
-
 # --------------------------------- Evaluating marker genes
-
 # Extract top 30 markers per cluster
 seurat_phase_RemovedUnwantedClusters.markers %>%
   group_by(cluster) %>%
@@ -998,17 +903,12 @@ seurat_phase_RemovedUnwantedClusters.markers %>%
 
 # Visualize top 30 markers per cluster
 View(top30)
-
 write.csv(top30, "top30 markers for each clusters in round2 clustering.csv", row.names=FALSE)
 
-
 # --------------------------------- Visualizing marker genes
-
 # DoHeatmap() generates an expression heatmap for given cells and features. 
 # In this case, we are plotting the top 30 markers for each cluster.
 DoHeatmap(object = seurat_phase_RemovedUnwantedClusters, features= top30$gene)
-
-
 DotPlot(object   = seurat_phase_RemovedUnwantedClusters,
         features = as.character(unique(top30$gene)),
         #group.by = "cluster",
@@ -1038,7 +938,6 @@ DotPlot(object   = seurat_phase_RemovedUnwantedClusters,
         features = c("Serpine2","Amigo2","Lypd1","Foxp2","Lrx4","Pde1a","Tbr1","Pcdh20","Zic1","Tbx20","Tagln2","Prkcq","Tac1","Slc7a11","Plpp4","Gpr88","Serpinb1b","Gm17750","Mmp17","Ntrk1","Cartpt","Vit","Apela","Col25a1","4833423E24Rik","Penk","Prdm8","Slc24a2","Gal","Calca","Cdhr1","Prokr1","Fam19a4","Slc17a7","lgfbp5","Prkcg","Cdk15","Stxbp6","Prlr","Postn","Spp1","Rhox5","Adcyap1","Opn4","Tpbg","Lgfbp4","Chrm2","Coch","Ceacam10","Anxa3","Neurod2","S100b","Nmb","Kit","Fes","Ll1rapl2","Bhlhe22","Fxyd6"))
 
 # --------------------------------- Assigning cell type identity to clusters based on Tran et. al.
-
 # We can then reassign the identity of the clusters to these cell types:
 # Rename all identities
 seurat_phase_RemovedUnwantedClusters_anno <- RenameIdents(object = seurat_phase_RemovedUnwantedClusters, 
