@@ -659,7 +659,7 @@ DotPlot(object = seurat_phase, cols = c("lightgrey", "red"),
 
 # --------------------------------- Adding Gene Annotations
 
-annotations <- read.csv("C:/Yeganeh/UTHSC Single-cell/code/dataset/MetaData/00_Master_RGC_24Aug2019_Yeganeh.csv")
+annotations <- read.csv("MetaData/00_Master_RGC_Y.csv")
 
 # find markers for every cluster compared to all remaining cells, report only the positive ones
 seurat_phase.markers <- FindAllMarkers(seurat_phase)
