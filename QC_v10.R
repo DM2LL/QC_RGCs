@@ -7,7 +7,6 @@ library(scales)
 library(cowplot)
 library(RCurl)
 library(DoubletFinder)
-
 #---------------------------------------------- Loading single-cell RNA-seq count data
 root.path= ""
 file.path= paste0(root.path, "dataset/")
