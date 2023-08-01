@@ -978,7 +978,7 @@ DotPlot(object = seurat_phase_RemovedUnwantedClusters,
 
 # --------------------------------- Adding Gene Annotations
 
-annotations <- read.csv("MetaData/00_Master_RGC_24Aug2019_Yeganeh.csv")
+annotations <- read.csv("MetaData/00_Master_RGC_Y.csv")
 
 # find markers for every cluster compared to all remaining cells, report only the positive ones
 seurat_phase_RemovedUnwantedClusters.markers <- FindAllMarkers(seurat_phase_RemovedUnwantedClusters)
